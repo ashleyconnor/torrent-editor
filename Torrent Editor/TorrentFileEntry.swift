@@ -8,7 +8,7 @@
 import Foundation
 
 struct TorrentFileEntry: Identifiable, Hashable {
-    let id = UUID()
+    var id: String { fullPath } // Use path as stable identifier
     var path: [String] // Path components (e.g., ["folder", "subfolder", "file.txt"])
     var length: Int // File size in bytes
     

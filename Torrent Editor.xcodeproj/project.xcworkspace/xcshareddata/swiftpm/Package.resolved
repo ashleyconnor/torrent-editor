@@ -1,5 +1,5 @@
 {
-  "originHash" : "e721da7f9826abdffcb6185e886155efa2514bd6234475f1afa893e29eb258d6",
+  "originHash" : "b01be75cb90830967c2aebc32170f742d5c24c7b34e43cf981bd34d50184bdb2",
   "pins" : [
     {
       "identity" : "sparkle",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "5581748cef2bae787496fe6d61139aebe0a451f6",
         "version" : "2.8.1"
+      }
+    },
+    {
+      "identity" : "swiftlisttreedatasource",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dzmitry-antonenka/SwiftListTreeDataSource",
+      "state" : {
+        "revision" : "d9a91982a236e6e67e7d6fba9ebd6028cd7c847c",
+        "version" : "1.0.2"
       }
     }
   ],

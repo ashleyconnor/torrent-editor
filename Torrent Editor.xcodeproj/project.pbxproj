@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		478773142EE96F300036C940 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 478773132EE96F300036C940 /* Sparkle */; };
+		47CBAFD52F4DF6750022A897 /* SwiftListTreeDataSource in Frameworks */ = {isa = PBXBuildFile; productRef = 47CBAFD42F4DF6750022A897 /* SwiftListTreeDataSource */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				478773142EE96F300036C940 /* Sparkle in Frameworks */,
+				47CBAFD52F4DF6750022A897 /* SwiftListTreeDataSource in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +134,7 @@
 			name = "Torrent Editor";
 			packageProductDependencies = (
 				478773132EE96F300036C940 /* Sparkle */,
+				47CBAFD42F4DF6750022A897 /* SwiftListTreeDataSource */,
 			);
 			productName = "Torrent Editor";
 			productReference = 478772E52EE64D6D0036C940 /* Torrent Editor.app */;
@@ -217,6 +220,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				478773122EE96F300036C940 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				47CBAFD32F4DF6750022A897 /* XCRemoteSwiftPackageReference "SwiftListTreeDataSource" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 478772E62EE64D6D0036C940 /* Products */;
@@ -421,6 +425,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -467,6 +472,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -642,6 +648,14 @@
 				minimumVersion = 2.8.1;
 			};
 		};
+		47CBAFD32F4DF6750022A897 /* XCRemoteSwiftPackageReference "SwiftListTreeDataSource" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dzmitry-antonenka/SwiftListTreeDataSource";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -649,6 +663,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 478773122EE96F300036C940 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		47CBAFD42F4DF6750022A897 /* SwiftListTreeDataSource */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47CBAFD32F4DF6750022A897 /* XCRemoteSwiftPackageReference "SwiftListTreeDataSource" */;
+			productName = SwiftListTreeDataSource;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
