@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+        <title>Test Appcast</title>
+        <item>
+            <title>v0.0.1</title>
+            <sparkle:version>1</sparkle:version>
+            <sparkle:shortVersionString>0.0.1</sparkle:shortVersionString>
+            <enclosure url="http://localhost:9000/Torrent_Editor_0.0.1.zip" sparkle:edSignature="gY+/1+tzzYg2qska31S+9ZCTptciyqPHJ4sjOnDVQOem5nseSLL9QKIgTwtaH4OujvKw6sYWEGp6Zl8s4nDXAQ==" length="960889" type="application/octet-stream"/>
+        </item>
+        <item>
+            <title>v0.0.2</title>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>0.0.2</sparkle:shortVersionString>
+            <enclosure url="http://localhost:9000/Torrent_Editor_0.0.2.zip" sparkle:edSignature="koBmd0hv8vigMhSaVtbVEXZniFau8CbrCkXtB5fNp4Jisfyv3JQpLe6Ud2o8lohC4k+6Mdbc8GPHS34r4LN3Bg==" length="960885" type="application/octet-stream"/>
+        </item>
+    </channel>
+</rss>

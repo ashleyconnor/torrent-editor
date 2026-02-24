@@ -4,4 +4,10 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:FileTreeNode.swift">
+   </FileRef>
+   <FileRef
+      location = "group:FileTreeView.swift">
+   </FileRef>
 </Workspace>
