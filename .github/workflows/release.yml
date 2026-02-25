@@ -84,7 +84,23 @@ jobs:
           echo "=== Identities in build keychain ==="
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
+          TOTAL=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -c "valid identity" || true)
           COUNT=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -c "Developer ID Application" || true)
+
+          if [ "$TOTAL" -gt 0 ] && [ "$COUNT" -eq 0 ]; then
+            echo ""
+            echo "ERROR: A signing identity was found, but it is not a 'Developer ID Application'"
+            echo "certificate. Found certificate type is shown above."
+            echo ""
+            echo "Developer ID Application is required for distributing macOS apps outside"
+            echo "the App Store. Apple Development / Apple Distribution certificates will not work."
+            echo ""
+            echo "To get one: Xcode → Settings → Accounts → Manage Certificates → + →"
+            echo "Developer ID Application. Then export it from Keychain Access via"
+            echo "'Export Items' and update the APPLE_CERTIFICATE secret."
+            exit 1
+          fi
+
           if [ "$COUNT" -eq 0 ]; then
             echo ""
             echo "ERROR: No 'Developer ID Application' identity found in the build keychain."
