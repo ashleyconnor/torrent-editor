@@ -64,7 +64,14 @@ final class TorrentFile {
         files.count == 1
     }
     
-    init() {}
+    init() {
+        // Set default "Created By" to app name and version
+        if let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+            createdBy = "Torrent Editor \(appVersion)"
+        } else {
+            createdBy = "Torrent Editor"
+        }
+    }
     
     // MARK: - Parsing
     
