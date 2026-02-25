@@ -75,6 +75,30 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH" \
             $(security list-keychains -d user | xargs)
 
+      # ── Verify certificate import ─────────────────────────────────────────────
+      # This step is intentionally kept verbose so that certificate issues are
+      # visible in the CI log. It fails the build immediately rather than letting
+      # xcodebuild produce a confusing "no certificate found" error.
+      - name: Verify signing identity
+        run: |
+          echo "=== Identities in build keychain ==="
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+          COUNT=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -c "Developer ID Application" || true)
+          if [ "$COUNT" -eq 0 ]; then
+            echo ""
+            echo "ERROR: No 'Developer ID Application' identity found in the build keychain."
+            echo "The most likely cause is that the .p12 was exported without its private key."
+            echo ""
+            echo "To fix: open Keychain Access → right-click the Developer ID Application"
+            echo "certificate entry → 'Export Items' (not 'Export Certificate') → set a"
+            echo "password → base64-encode the resulting .p12 and update APPLE_CERTIFICATE."
+            exit 1
+          fi
+
+          echo ""
+          echo "Found $COUNT Developer ID Application identity/identities. Proceeding."
+
       # ── Archive ───────────────────────────────────────────────────────────────
       - name: Build archive
         run: |
