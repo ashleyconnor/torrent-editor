@@ -167,6 +167,12 @@ jobs:
 
       - name: Create DMG
         run: |
+          # Stage only the .app — xcodebuild -exportArchive also writes
+          # packaging.log, distributionSummary.plist etc. into the export
+          # folder and create-dmg would include them all otherwise.
+          mkdir -p "$RUNNER_TEMP/dmg_staging"
+          cp -R "$RUNNER_TEMP/export/Torrent Editor.app" "$RUNNER_TEMP/dmg_staging/"
+
           create-dmg \
             --volname "Torrent Editor" \
             --window-pos 200 120 \
@@ -176,7 +182,7 @@ jobs:
             --hide-extension "Torrent Editor.app" \
             --app-drop-link 425 190 \
             "$RUNNER_TEMP/TorrentEditor-${{ steps.version.outputs.VERSION }}.dmg" \
-            "$RUNNER_TEMP/export/"
+            "$RUNNER_TEMP/dmg_staging/"
 
       # ── Notarize ──────────────────────────────────────────────────────────────
       # Uses the App Store Connect API key (preferred over Apple ID + password).
