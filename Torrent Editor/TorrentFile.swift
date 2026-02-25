@@ -227,10 +227,19 @@ final class TorrentFile {
     // MARK: - Info Hash Calculation
     
     func calculateInfoHash() -> String? {
+        // Return nil if torrent has no files or no name
+        guard !files.isEmpty, !name.isEmpty else {
+            return nil
+        }
+
         // Encode just the info dictionary
         var infoDict: [String: BencodeValue] = [:]
         
-        infoDict["name"] = .string(name.data(using: .utf8)!)
+        guard let nameData = name.data(using: .utf8) else {
+            return nil
+        }
+
+        infoDict["name"] = .string(nameData)
         infoDict["piece length"] = .integer(pieceLength)
         
         if isPrivate {
