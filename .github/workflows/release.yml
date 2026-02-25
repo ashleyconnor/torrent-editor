@@ -1,0 +1,168 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build, Sign & Release
+    runs-on: macos-15
+    permissions:
+      contents: write  # Required to create GitHub Releases
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for accurate release notes
+
+      # Strip the 'v' prefix from the tag (v1.2.3 → 1.2.3)
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set marketing version
+        run: |
+          xcrun agvtool new-marketing-version "${{ steps.version.outputs.VERSION }}"
+
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      # ── Code Signing ─────────────────────────────────────────────────────────
+      # Imports the Developer ID Application certificate into a short-lived
+      # keychain so Xcode can sign the archive without interactive prompts.
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "$CERTIFICATE_BASE64" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" \
+            -k "$KEYCHAIN_PATH" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Make this keychain the default so Xcode finds it
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain
+
+          rm "$RUNNER_TEMP/certificate.p12"
+
+      # ── Archive ───────────────────────────────────────────────────────────────
+      - name: Build archive
+        run: |
+          xcodebuild archive \
+            -project "Torrent Editor.xcodeproj" \
+            -scheme "Torrent Editor" \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/TorrentEditor.xcarchive" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            ONLY_ACTIVE_ARCH=NO
+
+      # ── Export ────────────────────────────────────────────────────────────────
+      - name: Create ExportOptions.plist
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>developer-id</string>
+            <key>teamID</key>
+            <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Export archive
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/TorrentEditor.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+
+      # ── Package ───────────────────────────────────────────────────────────────
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Create DMG
+        run: |
+          create-dmg \
+            --volname "Torrent Editor" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Torrent Editor.app" 175 190 \
+            --hide-extension "Torrent Editor.app" \
+            --app-drop-link 425 190 \
+            "$RUNNER_TEMP/TorrentEditor-${{ steps.version.outputs.VERSION }}.dmg" \
+            "$RUNNER_TEMP/export/"
+
+      # ── Notarize ──────────────────────────────────────────────────────────────
+      # Uses the App Store Connect API key (preferred over Apple ID + password).
+      # Notarizes and staples the DMG so Gatekeeper accepts it on first launch.
+      - name: Notarize and staple DMG
+        env:
+          NOTARIZE_API_KEY_ID: ${{ secrets.NOTARIZE_API_KEY_ID }}
+          NOTARIZE_API_ISSUER_ID: ${{ secrets.NOTARIZE_API_ISSUER_ID }}
+          NOTARIZE_API_KEY: ${{ secrets.NOTARIZE_API_KEY }}
+        run: |
+          API_KEY_PATH="$RUNNER_TEMP/api_key.p8"
+          echo "$NOTARIZE_API_KEY" | base64 --decode > "$API_KEY_PATH"
+
+          xcrun notarytool submit \
+            "$RUNNER_TEMP/TorrentEditor-${{ steps.version.outputs.VERSION }}.dmg" \
+            --key "$API_KEY_PATH" \
+            --key-id "$NOTARIZE_API_KEY_ID" \
+            --issuer "$NOTARIZE_API_ISSUER_ID" \
+            --wait \
+            --verbose
+
+          xcrun stapler staple \
+            "$RUNNER_TEMP/TorrentEditor-${{ steps.version.outputs.VERSION }}.dmg"
+
+          rm "$API_KEY_PATH"
+
+      # ── Cleanup ───────────────────────────────────────────────────────────────
+      - name: Remove signing keychain
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/build.keychain" || true
+
+      # ── Publish ───────────────────────────────────────────────────────────────
+      # Auto-generates release notes from PRs/commits merged since the last tag.
+      # Pre-release is detected automatically: tags like v1.0.0-beta.1 or v2.0.0-rc.1.
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "${{ github.ref_name }}" == *"-"* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create "${{ github.ref_name }}" \
+            "$RUNNER_TEMP/TorrentEditor-${{ steps.version.outputs.VERSION }}.dmg" \
+            --title "Torrent Editor ${{ steps.version.outputs.VERSION }}" \
+            --generate-notes \
+            $PRERELEASE_FLAG
