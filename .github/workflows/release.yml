@@ -25,7 +25,13 @@ jobs:
 
       - name: Set marketing version
         run: |
-          xcrun agvtool new-marketing-version "${{ steps.version.outputs.VERSION }}"
+          # agvtool requires VERSIONING_SYSTEM = "apple-generic" in the project
+          # build settings; without it the command exits 0 but does nothing.
+          # This project uses GENERATE_INFOPLIST_FILE = YES, so MARKETING_VERSION
+          # lives directly in project.pbxproj — update it with sed instead.
+          sed -i '' \
+            "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ steps.version.outputs.VERSION }}/g" \
+            "Torrent Editor.xcodeproj/project.pbxproj"
 
       - name: Cache SPM packages
         uses: actions/cache@v4
