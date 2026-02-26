@@ -231,3 +231,65 @@ jobs:
             --title "Torrent Editor ${{ steps.version.outputs.VERSION }}" \
             --generate-notes \
             $PRERELEASE_FLAG
+
+      # ── Appcast (Sparkle) ─────────────────────────────────────────────────────
+      # Downloads Sparkle tools at the pinned version, signs the DMG with the
+      # EdDSA private key, generates appcast.xml, and publishes it to GitHub Pages
+      # so the in-app updater can discover new releases automatically.
+      #
+      # Skipped for pre-release tags (e.g. v1.0.0-beta.1) — those land on GitHub
+      # Releases as pre-releases but are not surfaced to all users via the appcast.
+      #
+      # Required secret: SPARKLE_PRIVATE_KEY
+      #   Run this once on your Mac to retrieve it from your keychain:
+      #   security find-generic-password -s "ed25519" -w | pbcopy
+      #   Paste the result into the SPARKLE_PRIVATE_KEY repository secret.
+      - name: Download Sparkle tools
+        if: "!contains(github.ref_name, '-')"
+        run: |
+          SPARKLE_VERSION=$(jq -r \
+            '.pins[] | select(.identity == "sparkle") | .state.version' \
+            "Torrent Editor.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved")
+          echo "SPARKLE_VERSION=$SPARKLE_VERSION" >> "$GITHUB_ENV"
+
+          curl -fL \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz" \
+            -o "$RUNNER_TEMP/sparkle.tar.xz"
+          mkdir -p "$RUNNER_TEMP/sparkle_tools"
+          tar -xf "$RUNNER_TEMP/sparkle.tar.xz" -C "$RUNNER_TEMP/sparkle_tools"
+
+      - name: Generate appcast
+        if: "!contains(github.ref_name, '-')"
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          KEY_PATH="$RUNNER_TEMP/sparkle_key"
+          echo "$SPARKLE_PRIVATE_KEY" > "$KEY_PATH"
+
+          # generate_appcast signs every archive in the folder, so give it
+          # a clean directory containing only the current release DMG.
+          mkdir -p "$RUNNER_TEMP/appcast_src"
+          cp "$RUNNER_TEMP/TorrentEditor-${{ steps.version.outputs.VERSION }}.dmg" \
+            "$RUNNER_TEMP/appcast_src/"
+
+          "$RUNNER_TEMP/sparkle_tools/bin/generate_appcast" \
+            --ed-key-file "$KEY_PATH" \
+            --download-url-prefix \
+              "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/" \
+            --link "https://github.com/${{ github.repository }}" \
+            "$RUNNER_TEMP/appcast_src/"
+
+          rm "$KEY_PATH"
+
+          # Copy to a workspace-relative path — required by the deploy action
+          mkdir -p appcast_deploy
+          cp "$RUNNER_TEMP/appcast_src/appcast.xml" appcast_deploy/
+
+      - name: Deploy appcast to GitHub Pages
+        if: "!contains(github.ref_name, '-')"
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: appcast_deploy
+          # Orphan keeps the gh-pages branch lean — no need for appcast history
+          force_orphan: true

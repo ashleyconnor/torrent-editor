@@ -5,7 +5,7 @@
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>http://localhost:9000/test.xml</string>
+	<string>https://ashleyconnor.github.io/torrent-editor/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>NRw514a77SXJsBBrDCbDE1u15xQ3Pl3qfISjKoIyeu0=</string>
 </dict>
