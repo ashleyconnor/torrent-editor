@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Torrent Editor</title>
+        <item>
+            <title>0.0.11</title>
+            <pubDate>Thu, 26 Feb 2026 02:03:13 +0000</pubDate>
+            <link>https://github.com/ashleyconnor/torrent-editor</link>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>0.0.11</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/ashleyconnor/torrent-editor/releases/download/v0.0.11/TorrentEditor-0.0.11.dmg" length="1982754" type="application/octet-stream" sparkle:edSignature="oJLyCKWH3YnlxNgS5tdTH+r+Zv0W6LDTmJJDUS9HXtIxhCFSahS8ef699rEiaHo4R2pMYmuB2hJFr+KtvMzjCw=="/>
+        </item>
+    </channel>
+</rss>
