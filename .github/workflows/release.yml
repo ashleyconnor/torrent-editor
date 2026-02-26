@@ -287,9 +287,17 @@ jobs:
 
       - name: Deploy appcast to GitHub Pages
         if: "!contains(github.ref_name, '-')"
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: appcast_deploy
-          # Orphan keeps the gh-pages branch lean — no need for appcast history
-          force_orphan: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd appcast_deploy
+          # .nojekyll prevents GitHub Pages from running Jekyll on the appcast
+          touch .nojekyll
+          git init -b gh-pages
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add appcast.xml .nojekyll
+          git commit -m "Update appcast for ${{ github.ref_name }}"
+          git push --force \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
+            HEAD:gh-pages
