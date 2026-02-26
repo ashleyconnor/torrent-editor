@@ -30,6 +30,9 @@ struct Torrent_EditorApp: App {
           AboutView()
         }
     }
+    .onOpenURL { url in
+      NotificationCenter.default.post(name: .openTorrentURL, object: url)
+    }
     .commands {
       CommandGroup(replacing: .appInfo) {
         Button("About Torrent Editor") {
@@ -66,5 +69,6 @@ struct Torrent_EditorApp: App {
 extension Notification.Name {
   static let newTorrent = Notification.Name("newTorrent")
   static let openTorrent = Notification.Name("openTorrent")
+  static let openTorrentURL = Notification.Name("openTorrentURL")
   static let saveTorrent = Notification.Name("saveTorrent")
 }

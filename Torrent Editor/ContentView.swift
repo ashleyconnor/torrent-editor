@@ -27,6 +27,11 @@ struct ContentView: View {
     .onReceive(NotificationCenter.default.publisher(for: .openTorrent)) { _ in
       openTorrent()
     }
+    .onReceive(NotificationCenter.default.publisher(for: .openTorrentURL)) { notification in
+      if let url = notification.object as? URL {
+        loadTorrent(from: url)
+      }
+    }
     .onReceive(NotificationCenter.default.publisher(for: .newTorrent)) { _ in
       createNewTorrent()
     }
@@ -44,13 +49,17 @@ struct ContentView: View {
     panel.title = "Choose a Torrent File"
 
     if panel.runModal() == .OK, let url = panel.url {
-      do {
-        let data = try Data(contentsOf: url)
-        torrentFile = try TorrentFile.parse(from: data)
-      } catch {
-        errorMessage = "Failed to open torrent: \(error.localizedDescription)"
-        showingError = true
-      }
+      loadTorrent(from: url)
+    }
+  }
+
+  private func loadTorrent(from url: URL) {
+    do {
+      let data = try Data(contentsOf: url)
+      torrentFile = try TorrentFile.parse(from: data)
+    } catch {
+      errorMessage = "Failed to open torrent: \(error.localizedDescription)"
+      showingError = true
     }
   }
 }
