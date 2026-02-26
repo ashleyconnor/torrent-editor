@@ -6,5 +6,10 @@
 	<true/>
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
+	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
+	<array>
+		<string>uk.co.ashleyconnor.Torrent-Editor-spks</string>
+		<string>uk.co.ashleyconnor.Torrent-Editor-spki</string>
+	</array>
 </dict>
 </plist>
