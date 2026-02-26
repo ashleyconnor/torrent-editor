@@ -29,9 +29,9 @@ struct Torrent_EditorApp: App {
         .sheet(isPresented: $showingAbout) {
           AboutView()
         }
-    }
-    .onOpenURL { url in
-      NotificationCenter.default.post(name: .openTorrentURL, object: url)
+        .onOpenURL { url in
+          NotificationCenter.default.post(name: .openTorrentURL, object: url)
+        }
     }
     .commands {
       CommandGroup(replacing: .appInfo) {
