@@ -25,12 +25,31 @@ jobs:
 
       - name: Set marketing version
         run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
           # agvtool requires VERSIONING_SYSTEM = "apple-generic" in the project
           # build settings; without it the command exits 0 but does nothing.
           # This project uses GENERATE_INFOPLIST_FILE = YES, so MARKETING_VERSION
           # lives directly in project.pbxproj — update it with sed instead.
           sed -i '' \
-            "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${{ steps.version.outputs.VERSION }}/g" \
+            "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $VERSION/g" \
+            "Torrent Editor.xcodeproj/project.pbxproj"
+
+          # Sparkle compares sparkle:version (CFBundleVersion / CURRENT_PROJECT_VERSION),
+          # NOT sparkle:shortVersionString, to decide if an update is available.
+          # CURRENT_PROJECT_VERSION is currently always "1", so Sparkle sees the
+          # appcast version as equal to the installed version and shows nothing to update.
+          #
+          # Encode the version as a monotonically increasing integer so numeric
+          # comparison always works: MAJOR*10000 + MINOR*100 + PATCH.
+          #   0.0.1 → 1  |  0.0.6 → 6  |  0.1.0 → 100  |  1.0.0 → 10000
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          BUILD=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+
+          sed -i '' \
+            "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $BUILD/g" \
             "Torrent Editor.xcodeproj/project.pbxproj"
 
       - name: Cache SPM packages
