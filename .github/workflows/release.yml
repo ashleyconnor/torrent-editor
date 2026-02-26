@@ -298,6 +298,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git add appcast.xml .nojekyll
           git commit -m "Update appcast for ${{ github.ref_name }}"
-          git push --force \
+          # credential.helper='' prevents the macOS keychain credential helper
+          # from prompting for input and hanging the push on macOS runners.
+          # GIT_TERMINAL_PROMPT=0 is a belt-and-suspenders guard against any
+          # other interactive prompt that would cause the step to hang.
+          GIT_TERMINAL_PROMPT=0 git -c credential.helper='' push --force \
             "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" \
             HEAD:gh-pages
