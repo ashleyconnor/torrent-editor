@@ -36,29 +36,27 @@ enum BencodeError: LocalizedError {
   }
 }
 
-final class BencodeParser {
-  private var data: Data
+struct BencodeParser {
+  private let data: Data
   private var position = 0
 
-  init(data: Data) {
+  private init(data: Data) {
     self.data = data
   }
 
   // MARK: - Parsing
 
   static func decode(_ data: Data) throws -> BencodeValue {
-    let parser = BencodeParser(data: data)
+    var parser = BencodeParser(data: data)
     return try parser.parseValue()
   }
 
-  private func parseValue() throws -> BencodeValue {
+  private mutating func parseValue() throws -> BencodeValue {
     guard position < data.count else {
       throw BencodeError.unexpectedEndOfData
     }
 
-    let byte = data[position]
-
-    switch byte {
+    switch data[position] {
     case UInt8(ascii: "i"):
       return try parseInteger()
     case UInt8(ascii: "l"):
@@ -72,15 +70,14 @@ final class BencodeParser {
     }
   }
 
-  private func parseInteger() throws -> BencodeValue {
+  private mutating func parseInteger() throws -> BencodeValue {
     position += 1  // Skip 'i'
 
     guard let endIndex = data[position...].firstIndex(of: UInt8(ascii: "e")) else {
       throw BencodeError.invalidInteger
     }
 
-    let integerData = data[position..<endIndex]
-    guard let integerString = String(data: integerData, encoding: .utf8),
+    guard let integerString = String(data: data[position..<endIndex], encoding: .utf8),
       let integer = Int(integerString)
     else {
       throw BencodeError.invalidInteger
@@ -90,14 +87,13 @@ final class BencodeParser {
     return .integer(integer)
   }
 
-  private func parseString() throws -> BencodeValue {
+  private mutating func parseString() throws -> BencodeValue {
     guard let colonIndex = data[position...].firstIndex(of: UInt8(ascii: ":")) else {
       throw BencodeError.invalidString
     }
 
-    let lengthData = data[position..<colonIndex]
-    guard let lengthString = String(data: lengthData, encoding: .utf8),
-      let length = Int(lengthString)
+    guard let lengthString = String(data: data[position..<colonIndex], encoding: .utf8),
+      let length = Int(lengthString), length >= 0
     else {
       throw BencodeError.invalidString
     }
@@ -108,13 +104,13 @@ final class BencodeParser {
       throw BencodeError.unexpectedEndOfData
     }
 
-    let stringData = data[position..<position + length]
+    let stringData = data.subdata(in: position..<position + length)
     position += length
 
     return .string(stringData)
   }
 
-  private func parseList() throws -> BencodeValue {
+  private mutating func parseList() throws -> BencodeValue {
     position += 1  // Skip 'l'
 
     var list: [BencodeValue] = []
@@ -132,22 +128,38 @@ final class BencodeParser {
     return .list(list)
   }
 
-  private func parseDictionary() throws -> BencodeValue {
+  private mutating func parseDictionary() throws -> BencodeValue {
     position += 1  // Skip 'd'
 
     var dict: [String: BencodeValue] = [:]
 
     while position < data.count && data[position] != UInt8(ascii: "e") {
-      // Parse key (must be a string)
-      guard case .string(let keyData) = try parseValue() else {
+      // Keys must be bencode strings (digit-prefixed length)
+      guard data[position] >= UInt8(ascii: "0"), data[position] <= UInt8(ascii: "9") else {
         throw BencodeError.invalidDictionary
       }
 
-      guard let key = String(data: keyData, encoding: .utf8) else {
+      guard let colonIndex = data[position...].firstIndex(of: UInt8(ascii: ":")) else {
         throw BencodeError.invalidDictionary
       }
 
-      // Parse value
+      guard let lengthString = String(data: data[position..<colonIndex], encoding: .utf8),
+        let length = Int(lengthString), length >= 0
+      else {
+        throw BencodeError.invalidDictionary
+      }
+
+      let keyStart = colonIndex + 1
+      guard keyStart + length <= data.count else {
+        throw BencodeError.unexpectedEndOfData
+      }
+
+      guard let key = String(data: data[keyStart..<keyStart + length], encoding: .utf8) else {
+        throw BencodeError.invalidDictionary
+      }
+
+      position = keyStart + length
+
       let value = try parseValue()
       dict[key] = value
     }
