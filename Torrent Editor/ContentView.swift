@@ -35,6 +35,13 @@ struct ContentView: View {
     .onReceive(NotificationCenter.default.publisher(for: .newTorrent)) { _ in
       createNewTorrent()
     }
+    #if DEBUG
+    .onAppear {
+      if let path = ProcessInfo.processInfo.environment["UITestTorrentFilePath"] {
+        loadTorrent(from: URL(fileURLWithPath: path))
+      }
+    }
+    #endif
   }
 
   private func createNewTorrent() {

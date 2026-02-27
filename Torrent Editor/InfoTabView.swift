@@ -14,11 +14,13 @@ struct InfoTabView: View {
     Form {
       Section("Metadata") {
         TextField("Torrent Name", text: $torrent.name, prompt: Text("Required"))
+          .accessibilityIdentifier("torrentName")
 
         VStack(alignment: .leading, spacing: 4) {
           TextField(
             "Announce URL", text: $torrent.announceURL,
             prompt: Text("e.g., http://tracker.example.com:8080/announce"))
+          .accessibilityIdentifier("announceURL")
 
           if !torrent.announceURL.isEmpty
             && !TorrentUtilities.isValidAnnounceURL(torrent.announceURL)

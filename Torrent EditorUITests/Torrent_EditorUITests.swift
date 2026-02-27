@@ -9,33 +9,67 @@ import XCTest
 
 final class Torrent_EditorUITests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+  override func setUpWithError() throws {
+    continueAfterFailure = false
+  }
 
-        // In UI tests it is usually best to stop immediately when a failure occurs.
-        continueAfterFailure = false
+  @MainActor
+  func testTabBarIsVisible() throws {
+    let app = XCUIApplication()
+    app.launch()
 
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+    XCTAssertTrue(app.radioButtons["Info"].exists)
+    XCTAssertTrue(app.radioButtons["Trackers"].exists)
+    XCTAssertTrue(app.radioButtons["Files"].exists)
+  }
+
+  @MainActor
+  func testSwitchingToTrackersTabShowsPrimaryTrackerSection() throws {
+    let app = XCUIApplication()
+    app.launch()
+
+    app.radioButtons["Trackers"].click()
+
+    XCTAssertTrue(app.staticTexts["Primary Tracker"].exists)
+  }
+
+  @MainActor
+  func testSwitchingToFilesTabShowsEmptyState() throws {
+    let app = XCUIApplication()
+    app.launch()
+
+    app.radioButtons["Files"].click()
+
+    XCTAssertTrue(app.staticTexts["No Files Added"].exists)
+  }
+
+  @MainActor
+  func testOpenTorrentFileShowsMetadata() throws {
+    let torrentURL = URL(fileURLWithPath: #filePath)
+      .deletingLastPathComponent()
+      .appendingPathComponent("testdata/ubuntukylin-24.04.4-desktop-amd64.iso.torrent")
+
+    let app = XCUIApplication()
+    app.launchEnvironment["UITestTorrentFilePath"] = torrentURL.path
+    app.launch()
+
+    // Name field should reflect the torrent's info.name
+    let nameField = app.textFields["torrentName"]
+    XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+    XCTAssertEqual(nameField.value as? String, "ubuntukylin-24.04.4-desktop-amd64.iso")
+
+    // Announce URL field should show the primary tracker
+    let announceField = app.textFields["announceURL"]
+    XCTAssertEqual(announceField.value as? String, "https://torrent.ubuntu.com/announce")
+
+    // Torrent Information section should show 1 file
+    XCTAssertTrue(app.staticTexts["1"].exists)
+  }
+
+  @MainActor
+  func testLaunchPerformance() throws {
+    measure(metrics: [XCTApplicationLaunchMetric()]) {
+      XCUIApplication().launch()
     }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
-    }
+  }
 }
